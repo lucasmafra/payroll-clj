@@ -1,0 +1,5 @@
+{:app-name        :ledger
+ :kafka-server    "localhost:9092"
+ :dynamo-endpoint "http://localhost:8000"
+ :aws-access-key  "aws-access-key"
+ :aws-secret-key  "aws-secret-key"}
