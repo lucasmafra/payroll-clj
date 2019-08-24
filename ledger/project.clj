@@ -11,7 +11,7 @@
                  [com.stuartsierra/component "0.4.0"]
                  [org.slf4j/slf4j-api "1.7.25"]
                  [org.slf4j/slf4j-simple "1.7.25"]
-                 [lucasmafra/common-clj "0.4.0"]]
+                 [lucasmafra/common-clj "0.5.0"]]
 
   :main ^:skip-aot ledger.core
   :target-path "target/%s"

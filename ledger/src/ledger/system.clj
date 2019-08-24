@@ -6,7 +6,9 @@
             [common-clj.components.docstore-client.dynamo-docstore-client
              :as dynamo-docstore-client]
             [ledger.ports.consumer :refer [consumer-topics]]
-            [ledger.components.ledger-repository.ledger-repository :as ledger-repository]))
+            [ledger.components.ledger-repository.ledger-repository :as ledger-repository]
+            [common-clj.components.docstore-client.in-memory-docstore-client
+             :as in-memory-docstore-client]))
 
 (defn merge-vec [& args] (vec (apply concat args)))
 
@@ -30,6 +32,7 @@
   (merge
    system
    (component/system-map
-    :consumer (component/using
-               (in-memory-consumer/new-consumer consumer-topics)
-               (merge-vec app-components [:config])))))
+    :consumer        (component/using
+                      (in-memory-consumer/new-consumer consumer-topics)
+                      (merge-vec app-components [:config]))
+    :docstore-client (in-memory-docstore-client/new-docstore-client))))

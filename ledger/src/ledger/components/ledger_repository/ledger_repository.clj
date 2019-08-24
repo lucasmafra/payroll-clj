@@ -25,26 +25,16 @@
       (map ledger-entry-document->ledger-entry entries)))
 
   (add-new-entry! [{:keys [docstore-client]} employee-id ledger-entry]
-    (docstore-client.protocol/put-item!
-     docstore-client
-     :ledger
-     (ledger-entry->ledger-entry-document ledger-entry employee-id))))
+    (let [existent-entry (docstore-client.protocol/get-item
+                          docstore-client
+                          :ledger
+                          {:employee-id (.toString employee-id)
+                           :control-key (.toString (:control-key ledger-entry))})]
+      (when-not existent-entry
+        (docstore-client.protocol/put-item!
+         docstore-client
+         :ledger
+         (ledger-entry->ledger-entry-document ledger-entry employee-id))))))
 
 (defn new-ledger-repository []
   (map->LedgerRepositoryImpl {}))
-
-#_(far/ensure-table
- {:endpoint "http://localhost:8000"}
- :ledger
- [:employee-id :s]
- {:range-keydef
-  [:control-key :s]})
-
-#_(far/delete-table
- {:endpoint "http://localhost:8000"}
- :ledger)
-
-#_(far/query
- {:endpoint "http://localhost:8000"}
- :ledger
- {:employee-id [:eq "dsjdjalkjdskal"]})

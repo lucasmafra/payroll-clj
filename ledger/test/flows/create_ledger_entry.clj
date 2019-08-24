@@ -23,6 +23,9 @@
    :amount         -20M
    :reference-date #date "2019-08-23"})
 
+(def duplicated-entry
+  (assoc union-service-charge :control-key (:control-key time-slot-remuneration)))
+
 (defn get-ledger [employee-id]
   (let [ledger-repository (-> *world* :system :ledger-repository)]
     (ledger-repository.protocol/get-ledger ledger-repository employee-id)))
@@ -40,15 +43,15 @@
     (get-ledger employee-id)
     => (just [time-slot-remuneration union-service-charge] :in-any-order)))
 
-(flow "duplicated message arrives (same control key)"
+(flow "message with repeated control-key arrives"
   (partial init! test-system)
 
   (partial message-arrived! :create-ledger-entry {:employee-id employee-id
                                                   :entry       time-slot-remuneration})
 
   (partial message-arrived! :create-ledger-entry {:employee-id employee-id
-                                                  :entry       time-slot-remuneration})
+                                                  :entry       duplicated-entry})
 
-  (fact "entry is not duplicated"
+  (fact "entry is not created"
     (get-ledger employee-id)
     => (just [time-slot-remuneration])))
