@@ -1,12 +1,12 @@
-(ns ledger.flows.create_ledger_entry
-  (:require [selvage.midje.flow :refer [*world* flow]]
-            [midje.sweet :refer :all]
-            [common-clj.components.producer.protocol :as producer.protocol]
-            [ledger.components.ledger-repository.protocol :as ledger-repository.protocol]
+(ns flows.create-ledger-entry
+  (:require [common-clj.components.producer.protocol :as producer.protocol]
             [common-clj.test-helpers :refer [init! message-arrived!]]
-            [schema.core :as s]
+            [ledger.components.ledger-repository.protocol :as ledger-repository.protocol]
             [ledger.schemata.ledger :as schemata.ledger]
-            [ledger.system :refer [test-system]]))
+            [ledger.system :refer [test-system]]
+            [midje.sweet :refer :all]
+            [schema.core :as s]
+            [selvage.midje.flow :refer [*world* flow]]))
 
 (def employee-id #uuid "6e931327-51b9-47ff-bc0d-622425befb78")
 

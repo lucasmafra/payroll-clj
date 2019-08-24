@@ -1,7 +1,7 @@
 (ns ledger.schemata.ledger
   (:require [schema.core :as s])
-  (:import (java.time LocalDate)
-           (java.math BigDecimal)))
+  (:import (java.math BigDecimal)
+           (java.time LocalDate)))
 
 (def LedgerEntry
   {:control-key                  s/Uuid

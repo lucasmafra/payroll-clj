@@ -2,4 +2,5 @@
 
 (defprotocol LedgerRepository
   (get-ledger [component employee-id])
-  (add-new-entry! [component employee-id ledger-entry]))
+  (get-entry [component employee-id control-key])
+  (add-entry! [component employee-id ledger-entry]))

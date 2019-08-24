@@ -1,8 +1,8 @@
 (ns ledger.adapters.ledger-test
-  (:require [midje.sweet :refer :all]
-            [schema.core :as s]
+  (:require [ledger.adapters.ledger :as adapters.ledger]
             [ledger.schemata.ledger :as schemata.ledger]
-            [ledger.adapters.ledger :as adapters.ledger]))
+            [midje.sweet :refer :all]
+            [schema.core :as s]))
 
 (def employee-id #uuid "6c8a5312-5716-4bb5-8d85-9521d8692e4b")
 
