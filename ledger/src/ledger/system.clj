@@ -1,4 +1,5 @@
 (ns ledger.system
+  (:gen-class)
   (:require [com.stuartsierra.component :as component]
             [common-clj.components.config.edn-config :as edn-config]
             [common-clj.components.consumer.in-memory-consumer :as in-memory-consumer]
@@ -47,3 +48,6 @@
                       (in-memory-consumer/new-consumer consumer-topics)
                       (merge-vec app-components [:config]))
     :docstore-client (in-memory-docstore-client/new-docstore-client))))
+
+(def -main (partial component/start system))
+(def run-dev (partial component/start system))
