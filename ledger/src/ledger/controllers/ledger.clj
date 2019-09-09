@@ -10,3 +10,8 @@
   (let [entry (ledger-repository.protocol/get-entry ledger-repository employee-id control-key)]
     (when-not entry
       (ledger-repository.protocol/add-entry! ledger-repository employee-id new-entry))))
+
+(s/defn get-ledger
+  [employee-id :- s/Uuid
+   {:keys [ledger-repository]}]
+  (ledger-repository.protocol/get-ledger ledger-repository employee-id))

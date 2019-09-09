@@ -1,7 +1,6 @@
 (ns flows.create-ledger-entry
-  (:require [common-clj.components.producer.protocol :as producer.protocol]
-            [common-clj.test-helpers :refer [init! message-arrived!]]
-            [ledger.components.ledger-repository.protocol :as ledger-repository.protocol]
+  (:require [common-clj.test-helpers :refer [init! message-arrived!]]
+            [flows.aux :refer [get-ledger]]            
             [ledger.schemata.ledger :as schemata.ledger]
             [ledger.system :refer [test-system]]
             [midje.sweet :refer :all]
@@ -26,32 +25,29 @@
 (def duplicated-entry
   (assoc union-service-charge :control-key (:control-key time-slot-remuneration)))
 
-(defn get-ledger [employee-id]
-  (let [ledger-repository (-> *world* :system :ledger-repository)]
-    (ledger-repository.protocol/get-ledger ledger-repository employee-id)))
+(s/with-fn-validation
+  (flow "on create-ledger-entry message"
+    (partial init! test-system)
 
-(flow "create ledger entries"
-  (partial init! test-system)
+    (partial message-arrived! :create-ledger-entry {:employee-id employee-id
+                                                    :entry       time-slot-remuneration})
 
-  (partial message-arrived! :create-ledger-entry {:employee-id employee-id
-                                                  :entry       time-slot-remuneration})
+    (partial message-arrived! :create-ledger-entry {:employee-id employee-id
+                                                    :entry       union-service-charge})
 
-  (partial message-arrived! :create-ledger-entry {:employee-id employee-id
-                                                  :entry       union-service-charge})
+    (fact "creates new entry for each message"
+      (get-ledger employee-id)
+      => (just [time-slot-remuneration union-service-charge] :in-any-order)))
 
-  (fact "a new entry is created"
-    (get-ledger employee-id)
-    => (just [time-slot-remuneration union-service-charge] :in-any-order)))
+  (flow "on message with duplicated entry"
+    (partial init! test-system)
 
-(flow "message with repeated control-key arrives"
-  (partial init! test-system)
+    (partial message-arrived! :create-ledger-entry {:employee-id employee-id
+                                                    :entry       time-slot-remuneration})
 
-  (partial message-arrived! :create-ledger-entry {:employee-id employee-id
-                                                  :entry       time-slot-remuneration})
+    (partial message-arrived! :create-ledger-entry {:employee-id employee-id
+                                                    :entry       duplicated-entry})
 
-  (partial message-arrived! :create-ledger-entry {:employee-id employee-id
-                                                  :entry       duplicated-entry})
-
-  (fact "entry is not created"
-    (get-ledger employee-id)
-    => (just [time-slot-remuneration])))
+    (fact "entry is not created"
+      (get-ledger employee-id)
+      => (just [time-slot-remuneration]))))

@@ -21,3 +21,7 @@
 (def CreateLedgerEntryMessage
   {:employee-id s/Uuid
    :entry       LedgerEntry})
+
+(def GetLedgerResponse
+  {:employee-id s/Uuid
+   :entries [LedgerEntry]})
