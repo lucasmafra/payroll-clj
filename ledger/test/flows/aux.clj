@@ -1,16 +1,13 @@
 (ns flows.aux
-  (:require [ledger.components.ledger-repository.protocol
-             :as ledger-repository.protocol]
+  (:require [ledger.ports.db :as db]
             [selvage.midje.flow :refer [*world*]]))
 
 (defn get-ledger [employee-id]
-  (let [ledger-repository (-> *world* :system :ledger-repository)]
-    (ledger-repository.protocol/get-ledger ledger-repository employee-id)))
+  (let [db-component (-> *world* :system :db)]
+    (db/get-ledger employee-id db-component)))
 
 (defn create-entry!
   [employee-id entry world]
-  (let [ledger-repository (-> world :system :ledger-repository)]
-    (ledger-repository.protocol/add-entry! ledger-repository
-                                           employee-id
-                                           entry)
+  (let [db-component (-> world :system :db)]
+    (db/save-ledger-entry! employee-id entry db-component)
     world))
