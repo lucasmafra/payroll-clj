@@ -13,11 +13,11 @@
 
 (s/defn get-ledger-entry :- (s/maybe schemata.ledger/LedgerEntry)
   [employee-id control-key db]
-  (docstore-client.protocol/get-item db
-                                     :ledger
-                                     {:employee-id employee-id
-                                      :control-key control-key}
-                                     {:schema-resp schemata.ledger/LedgerEntry}))
+  (docstore-client.protocol/maybe-get-item db
+                                           :ledger
+                                           {:employee-id employee-id
+                                            :control-key control-key}
+                                           {:schema-resp schemata.ledger/LedgerEntry}))
 
 (s/defn save-ledger-entry! :- schemata.ledger/LedgerEntry
   [employee-id ledger-entry db]
