@@ -1,13 +1,13 @@
 (ns ledger.ports.consumer
-  (:require [ledger.controllers.ledger :as controllers.ledger]
-            [ledger.schemata.ledger :as schemata.ledger]
+  (:require [ledger.controllers.ledger :as c-ledger]
+            [ledger.schemata.ledger :as s-ledger]
             [schema.core :as s]))
 
-(s/defn create-entry
-  [{:keys [employee-id entry]} :- schemata.ledger/CreateLedgerEntryMessage
-   components]
-  (controllers.ledger/create-new-entry! employee-id entry components))
+(s/defn create-transaction!
+  [{:keys [ledger/employee-id ledger/transaction]} components]
+  (c-ledger/create-transaction! employee-id transaction components))
 
-(def consumer-topics
-  {:create-ledger-entry {:handler create-entry
-                         :schema  schemata.ledger/CreateLedgerEntryMessage}})
+(def topics
+  {:transaction/create
+   {:topic/handler create-transaction!
+    :topic/schema  s-ledger/CreateTransactionMessage}})

@@ -2,15 +2,14 @@
   (:gen-class)
   (:require [com.stuartsierra.component :as component]
             [common-clj.components.config.edn-config :as edn-config]
-            [common-clj.components.consumer.in-memory-consumer :as in-memory-consumer]
+            [common-clj.components.consumer.in-memory-consumer :as im-consumer]
             [common-clj.components.consumer.kafka-consumer :as kafka-consumer]
             [common-clj.components.docstore-client.dynamo-docstore-client
-             :as dynamo-docstore-client]
-            [common-clj.components.docstore-client.in-memory-docstore-client
-             :as in-memory-docstore-client]
-            [common-clj.components.http-server.http-server :as http-server]
-            [ledger.ports.consumer :refer [consumer-topics]]
-            [ledger.ports.http-server :refer [routes]]))
+             :as dynamo-dc]
+            [common-clj.components.docstore-client.in-memory-docstore-client :as im-dc]
+            [common-clj.components.http-server.http-server :as hs]
+            [ledger.ports.consumer :as p-consumer]
+            [ledger.ports.http-server :as p-hs]))
 
 (defn merge-vec [& args] (vec (apply concat args)))
 
@@ -22,15 +21,15 @@
    :config            (edn-config/new-config)
    
    :db                (component/using
-                        (dynamo-docstore-client/new-docstore-client)
+                        (dynamo-dc/new-docstore-client)
                         [:config])
       
    :consumer          (component/using
-                        (kafka-consumer/new-consumer consumer-topics)
+                        (kafka-consumer/new-consumer p-consumer/topics)
                         (merge-vec app-components [:config]))
    
    :http-server       (component/using
-                        (http-server/new-http-server routes)
+                        (hs/new-http-server p-hs/routes)
                         (merge-vec app-components [:config]))))
 
 (def test-system
@@ -40,11 +39,11 @@
     :config          (edn-config/new-config :test)
 
     :db              (component/using
-                      (in-memory-docstore-client/new-docstore-client)
+                      (im-dc/new-docstore-client)
                       [:config])
 
     :consumer        (component/using
-                      (in-memory-consumer/new-consumer consumer-topics)
+                      (im-consumer/new-consumer p-consumer/topics)
                       (merge-vec app-components [:config :db])))))
 
 (def -main (partial component/start system))

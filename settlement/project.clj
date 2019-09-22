@@ -4,7 +4,7 @@
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[org.clojure/clojure "1.10.0"]
-                 [lucasmafra/common-clj "0.18.0"]]
+                 [lucasmafra/common-clj "0.20.1"]]
   :main ^{:skip-aot false} settlement.system
   :target-path "target/%s"
   :profiles {:uberjar    {:aot :all}

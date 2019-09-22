@@ -1,27 +1,26 @@
 (ns ledger.ports.db
-  (:require [ledger.schemata.ledger :as schemata.ledger]
+  (:require [ledger.schemata.ledger :as s-ledger]
             [schema.core :as s]
-            [common-clj.components.docstore-client.protocol
-             :as docstore-client.protocol]))
+            [common-clj.components.docstore-client.protocol :as dc-pro]))
 
-(s/defn get-ledger :- [schemata.ledger/LedgerEntry]
+(s/defn get-transactions :- [s-ledger/Transaction]
   [employee-id db]
-  (docstore-client.protocol/query db
-                                  :ledger
-                                  {:employee-id employee-id}
-                                  {:schema-resp [schemata.ledger/LedgerEntry]}))
+  (dc-pro/query db
+                :ledger/transactions
+                {:transaction/employee-id employee-id}
+                {:response/schema [s-ledger/Transaction]}))
 
-(s/defn get-ledger-entry :- (s/maybe schemata.ledger/LedgerEntry)
+(s/defn get-transaction :- (s/maybe s-ledger/Transaction)
   [employee-id control-key db]
-  (docstore-client.protocol/maybe-get-item db
-                                           :ledger
-                                           {:employee-id employee-id
-                                            :control-key control-key}
-                                           {:schema-resp schemata.ledger/LedgerEntry}))
+  (dc-pro/maybe-get-item db
+                         :ledger/transactions
+                         {:transaction/employee-id employee-id
+                          :transaction/control-key control-key}
+                         {:response/schema s-ledger/Transaction}))
 
-(s/defn save-ledger-entry! :- schemata.ledger/LedgerEntry
-  [employee-id ledger-entry db]
-    (docstore-client.protocol/put-item! db
-                                        :ledger
-                                        {:employee-id employee-id}
-                                        ledger-entry))
+(s/defn save-transaction! :- s-ledger/Transaction
+  [employee-id transaction db]
+    (dc-pro/put-item! db
+                      :ledger/transactions
+                      {:transaction/employee-id employee-id}
+                      transaction))

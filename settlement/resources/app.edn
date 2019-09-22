@@ -1,0 +1,6 @@
+{:app-name        :settlement
+ :http-port       8080
+ :kafka-server    "localhost:9092"
+ :dynamo-endpoint "http://localhost:8000"
+ :aws-access-key  "aws-access-key"
+ :aws-secret-key  "aws-secret-key"}

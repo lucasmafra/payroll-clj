@@ -1,16 +1,15 @@
 (ns ledger.controllers.ledger
   (:require [ledger.ports.db :as db]
-            [ledger.schemata.ledger :as schemata.ledger]
+            [ledger.schemata.ledger :as s-ledger]
             [schema.core :as s]))
 
-(s/defn create-new-entry!
+(s/defn create-transaction!
   [employee-id :- s/Uuid
-   {:keys [control-key] :as new-entry} :- schemata.ledger/LedgerEntry
+   {:keys [transaction/control-key] :as new-transaction} :- s-ledger/Transaction
    {:keys [db]}]
-  (when-not (db/get-ledger-entry employee-id control-key db)
-    (db/save-ledger-entry! employee-id new-entry db)))
+  (when-not (db/get-transaction employee-id control-key db)
+    (db/save-transaction! employee-id new-transaction db)))
 
-(s/defn get-ledger
-  [employee-id :- s/Uuid
-   {:keys [db]}]
-  (db/get-ledger employee-id db))
+(s/defn get-transactions
+  [employee-id :- s/Uuid {:keys [db]}]
+  (db/get-transactions employee-id db))

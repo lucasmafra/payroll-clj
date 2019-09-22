@@ -3,22 +3,24 @@
   (:import java.math.BigDecimal
            (java.time LocalDate LocalDateTime)))
 
-(defn- loose-enum [v] s/Keyword)
-
 (def ContractType
-  (s/enum :salary :hourly-rate :sales-commission))
+  (s/enum :contract-type/salary
+          :contract-type/hourly-rate
+          :contract-type/sales-commission))
 
-(def ledger-entry-types
-  #{:salary-compensation :service-charge :union-tax})
-
-(def LedgerEntry
-  {:control-key                 s/Uuid
-   :type                        (loose-enum ledger-entry-types)
-   :amount                      BigDecimal
-   :reference-date              LocalDate
-   (s/optional-key :settled-at) LocalDateTime})
+(def Transaction
+  {:transaction/control-key                 s/Uuid
+   :transaction/category                    s/Keyword
+   :transaction/amount                      BigDecimal
+   :transaction/reference-date              LocalDate
+   (s/optional-key :transaction/settled-at) LocalDateTime})
 
 (def Settlement
-  {:balance BigDecimal
-   :settled [LedgerEntry]
-   :as-of   LocalDateTime})
+  {:settlement/balance      BigDecimal
+   :settlement/transactions [Transaction]
+   :settlement/created-at   LocalDateTime})
+
+(def Scheduling
+  {:scheduling/employee-id                 s/Uuid
+   :scheduling/at                          LocalDateTime
+   (s/optional-key :scheduling/handled-at) LocalDateTime})
