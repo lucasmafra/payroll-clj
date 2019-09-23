@@ -4,6 +4,6 @@
  :dynamo-endpoint "http://localhost:8000"
  :aws-access-key  "aws-access-key"
  :aws-secret-key  "aws-secret-key"
- :dynamo-tables   {:ledger
-                   {:primary-key   [:employee-id :s]
-                    :secondary-key [:control-key :s]}}}
+ :dynamo-tables   {:ledger/transactions
+                   {:primary-key   [:transaction/employee-id :s]
+                    :secondary-key [:transaction/control-key :s]}}}

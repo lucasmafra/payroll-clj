@@ -1,16 +1,16 @@
 (ns ledger.ports.http-server
   (:require [ledger.controllers.ledger :as c-ledger]
             [ledger.schemata.ledger :as s-ledger]
+            [common-clj.components.http-server.http-server :as hs]
             [schema.core :as s]))
 
 (defn get-transactions [{{:keys [employee-id]} :path-params} components]
-  {:response/status 200
-   :response/body
-   {:ledger/employee-id employee-id
-    :ledger/transactions (c-ledger/get-transactions employee-id components)}})
+  (hs/ok
+   {:ledger/employee-id  employee-id
+    :ledger/transactions (c-ledger/get-transactions employee-id components)}))
 
 (def routes
-  {:transactions/get
+  {:get-transactions
    {:route/path         "/api/transactions/:employee-id"
     :route/method       :get
     :route/handler      get-transactions
