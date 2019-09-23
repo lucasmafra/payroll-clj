@@ -1,5 +1,6 @@
 (ns flows.create-transaction
-  (:require [common-clj.test-helpers :refer :all]
+  (:require [common-clj.generators :as gen]
+            [common-clj.test-helpers :refer :all]
             [flows.aux :as aux]            
             [ledger.schemata.ledger :as s-ledger]
             [ledger.system :as sys]
@@ -7,15 +8,15 @@
             [schema.core :as s]
             [selvage.midje.flow :refer [*world* flow]]))
 
-(def employee-a (random-uuid))
-(def employee-b (random-uuid))
-
-(def transaction-a1 (generate s-ledger/Transaction))
-(def transaction-a2 (generate s-ledger/Transaction))
-(def transaction-b1 (generate s-ledger/Transaction))
-(def transaction-a1<duplicated> (generate s-ledger/Transaction
-                                          :transaction/control-key
-                                          (:transaction/control-key transaction-a1)))
+(def employee-a (gen/generate s/Uuid))
+(def employee-b (gen/generate s/Uuid))
+(def transaction-a1 (gen/generate s-ledger/Transaction))
+(def transaction-a2 (gen/generate s-ledger/Transaction))
+(def transaction-b1 (gen/generate s-ledger/Transaction))
+(def transaction-a1<duplicated> (gen/complete
+                                 {:transaction/control-key
+                                  (:transaction/control-key transaction-a1)}
+                                 s-ledger/Transaction))
 
 (s/with-fn-validation
   (flow "create transaction"

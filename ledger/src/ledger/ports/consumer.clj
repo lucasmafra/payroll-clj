@@ -8,6 +8,6 @@
   (c-ledger/create-transaction! employee-id transaction components))
 
 (def topics
-  {:transaction/create
+  {:create-transaction
    {:topic/handler create-transaction!
     :topic/schema  s-ledger/CreateTransactionMessage}})

@@ -1,7 +1,7 @@
 (ns ledger.ports.db
-  (:require [ledger.schemata.ledger :as s-ledger]
-            [schema.core :as s]
-            [common-clj.components.docstore-client.protocol :as dc-pro]))
+  (:require [common-clj.components.docstore-client.protocol :as dc-pro]
+            [ledger.schemata.ledger :as s-ledger]
+            [schema.core :as s]))
 
 (s/defn get-transactions :- [s-ledger/Transaction]
   [employee-id db]
