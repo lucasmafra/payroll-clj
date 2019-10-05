@@ -44,7 +44,7 @@
 
     :consumer        (component/using
                       (im-consumer/new-consumer p-consumer/topics)
-                      (merge-vec app-components [:config :db])))))
+                      (merge-vec app-components [:config])))))
 
 (def -main (partial component/start system))
 (def run-dev (partial component/start system))

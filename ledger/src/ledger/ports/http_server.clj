@@ -11,8 +11,8 @@
 
 (def routes
   {:get-transactions
-   {:route/path         "/api/transactions/:employee-id"
-    :route/method       :get
-    :route/handler      get-transactions
-    :path-params/schema {:employee-id s/Uuid}
-    :response/schema    s-ledger/GetTransactionsResponse}})
+   {:path               "/api/transactions/:employee-id"
+    :method             :get
+    :handler            get-transactions
+    :path-params-schema {:employee-id s/Uuid}
+    :response-schema    s-ledger/GetTransactionsResponse}})

@@ -7,9 +7,6 @@
 (defn- not-settled-yet [transaction]
   (not (:transaction/settled-at transaction)))
 
-(defn- mark-as-settled [as-of]
-  #(assoc % :transaction/settled-at as-of))
-
 (defn- balance [transactions]
   (reduce #(+ %1 (:transaction/amount %2)) 0 transactions))
 
@@ -22,21 +19,21 @@
   [transactions :- [s-settlement/Transaction]
    as-of :- LocalDateTime]
   (let [to-settle (filter not-settled-yet transactions)]
-    {:settlement/balance      (balance to-settle)
-     :settlement/transactions (map (mark-as-settled as-of) to-settle)
-     :settlement/created-at   as-of}))
+    {:settlement/balance        (balance to-settle)
+     :settlement/transactions   to-settle
+     :settlement/reference-date as-of}))
 
 (s/defn is-pay-day? :- s/Bool
-  ([contract-type :- s-settlement/ContractType as-of :- LocalDate]
-   (is-pay-day? contract-type as-of nil))
+  ([employee :- s-settlement/Employee as-of :- LocalDate]
+   (is-pay-day? employee as-of nil))
   
-  ([contract-type :- s-settlement/ContractType
+  ([{:keys [employee/contract-type]} :- s-settlement/Employee
     as-of :- LocalDate
     last-settlement :- (s/maybe s-settlement/Settlement)]
    (let [first-settlement?    (nil? last-settlement)
          last-settlement-date (if last-settlement
                                 (time/local-date-time->local-date
-                                 (:settlement/created-at last-settlement)))]
+                                 (:settlement/reference-date last-settlement)))]
      (contract-type
       {:contract-type/salary (time/last-day-of-month? as-of)
        
@@ -47,3 +44,7 @@
                                                 (at-least-two-weeks-ago?
                                                  last-settlement-date
                                                  as-of)))}))))
+
+(s/defn positive-settlement? :- s/Bool
+  [{:keys [settlement/balance]} :- s-settlement/Settlement]
+  (> balance 0))

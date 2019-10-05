@@ -2,7 +2,9 @@
   (:require [schema.core :as s]
             [midje.sweet :refer :all]
             [settlement.domain.settlement :as settlement]
-            [common-clj.test-helpers :as th]))
+            [common-clj.test-helpers :as th]
+            [common-clj.generators :as gen]
+            [settlement.schemata.settlement :as s-settlement]))
 
 (def last-day-of-current-month #date "2019-07-31")
 (def last-day-of-current-month-9am #date-time "2019-07-31T09:00:00")
@@ -36,18 +38,26 @@
    :transaction/amount         -300M
    :transaction/reference-date a-week-ago})
 
-(def current-salary-settled
-  (assoc current-salary :transaction/settled-at last-day-of-current-month-9am))
-
-(def service-charge-settled
-  (assoc service-charge :transaction/settled-at last-day-of-current-month-9am))
-
 (def transactions [current-salary service-charge previous-salary])
 
 (def last-settlement
-  {:settlement/balance      0M
-   :settlement/transactions []
-   :settlement/created-at   last-friday-9am})
+  {:settlement/balance        0M
+   :settlement/transactions   []
+   :settlement/reference-date last-friday-9am})
+
+(def salary-based-employee (gen/complete {:employee/contract-type :contract-type/salary}
+                                         s-settlement/Employee))
+
+(def hourly-based-employee (gen/complete {:employee/contract-type :contract-type/hourly-rate}
+                                         s-settlement/Employee))
+
+(def commission-based-employee (gen/complete
+                                {:employee/contract-type :contract-type/sales-commission}
+                                s-settlement/Employee))
+
+(def negative-settlement (gen/complete {:settlement/balance -500M} s-settlement/Settlement))
+(def zero-settlement (gen/complete {:settlement/balance 0M} s-settlement/Settlement))
+(def positive-settlement (gen/complete {:settlement/balance 500M} s-settlement/Settlement))
 
 (s/with-fn-validation
   (facts "settle"
@@ -55,7 +65,7 @@
       (-> transactions
           (settlement/settle last-day-of-current-month-9am)
           :settlement/transactions)
-      => [current-salary-settled service-charge-settled])
+      => [current-salary service-charge])
     (fact "balance is the sum of all transactions to be settled"
       (-> transactions
           (settlement/settle last-day-of-current-month-9am)
@@ -64,34 +74,39 @@
 
   (facts "is-pay-day?"
     (fact "salaried employees get paid in the last day of month"
-      (settlement/is-pay-day? :contract-type/salary last-day-of-current-month) => true
-      (settlement/is-pay-day? :contract-type/salary not-last-day-of-month) => false)
+      (settlement/is-pay-day? salary-based-employee last-day-of-current-month) => true
+      (settlement/is-pay-day? salary-based-employee not-last-day-of-month) => false)
 
     (fact "hourly employees get paid on fridays"
-      (settlement/is-pay-day? :contract-type/hourly-rate friday) => true
-      (settlement/is-pay-day? :contract-type/hourly-rate not-friday) => false)
+      (settlement/is-pay-day? hourly-based-employee friday) => true
+      (settlement/is-pay-day? hourly-based-employee not-friday) => false)
 
     (facts "commissioned employees get paid every two fridays"
       (fact "when no last settlement is informed"
-        (settlement/is-pay-day? :contract-type/sales-commission last-friday)
+        (settlement/is-pay-day? commission-based-employee last-friday)
         => true
 
-        (settlement/is-pay-day? :contract-type/sales-commission last-friday nil)
+        (settlement/is-pay-day? commission-based-employee last-friday nil)
         => true)
 
       (fact "when last settlement happened less than two weeks ago"
-        (settlement/is-pay-day? :contract-type/sales-commission
+        (settlement/is-pay-day? commission-based-employee
                                 last-friday
                                 last-settlement)
         => false
 
-        (settlement/is-pay-day? :contract-type/sales-commission
+        (settlement/is-pay-day? commission-based-employee
                                 this-friday
                                 last-settlement)
         => false)
 
       (fact "when last settlement happened at least two weeks ago"
-        (settlement/is-pay-day? :contract-type/sales-commission
+        (settlement/is-pay-day? commission-based-employee
                                 next-friday
                                 last-settlement)
-        => true))))
+        => true)))
+
+  (facts "positive-settlement?"
+    (settlement/positive-settlement? negative-settlement) => false
+    (settlement/positive-settlement? zero-settlement) => false
+    (settlement/positive-settlement? positive-settlement) => true))

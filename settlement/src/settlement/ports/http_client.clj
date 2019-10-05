@@ -1,14 +1,17 @@
 (ns settlement.ports.http-client
   (:require [schema.core :as s]
-            [settlement.schemata.settlement :as s-settlement]
-            [settlement.ports.db :as db]
-            [common-clj.time :as time]
-            [settlement.domain.settlement :as settlement]))
+            [settlement.schemata.settlement :as s-settlement]))
 
 (def endpoints
-  {:employee-ledger
+  {:get-all-employees
+   {:service         :employees
+    :path            "/api/employees"
+    :method          :get
+    :response-schema {:employees [s-settlement/Employee]}}
+
+   :get-transactions
    {:service            :ledger
-    :path               "/ledger/:employee-id"
+    :path               "/api/transactions/:employee-id"
     :method             :get
     :path-params-schema {:employee-id s/Uuid}
-    :response-schema    s-settlement/GetLedgerResponse}})
+    :response-schema    {:transactions [s-settlement/Transaction]}}})

@@ -13,10 +13,9 @@
 (def transaction-a1 (gen/generate s-ledger/Transaction))
 (def transaction-a2 (gen/generate s-ledger/Transaction))
 (def transaction-b1 (gen/generate s-ledger/Transaction))
-(def transaction-a1<duplicated> (gen/complete
-                                 {:transaction/control-key
-                                  (:transaction/control-key transaction-a1)}
-                                 s-ledger/Transaction))
+(def transaction-a1<duplicated>
+  (gen/complete {:transaction/control-key (:transaction/control-key transaction-a1)}
+                s-ledger/Transaction))
 
 (s/with-fn-validation
   (flow "create transaction"
