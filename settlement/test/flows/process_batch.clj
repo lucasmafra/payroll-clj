@@ -1,12 +1,13 @@
-(ns flows.batch-settlement
+(ns flows.process-batch
   (:require [common-clj.generators :as gen]
-            [common-clj.test-helpers :refer :all]
             [flows.aux :as aux]
             [midje.sweet :refer :all]
             [selvage.midje.flow :refer [flow *world*]]
             [settlement.system :as sys]
+            [matcher-combinators.midje :refer [match]]
             [settlement.schemata.settlement :as s-settlement]
-            [schema.core :as s])
+            [schema.core :as s]
+            [common-clj.test-helpers :as th])
   (:import java.time.LocalDateTime))
 
 (def last-day-of-month-8am #date-time "2019-09-30T08:00:00")
@@ -35,8 +36,11 @@
 
 (def negative-transaction (gen/complete {:transaction/amount -100M} s-settlement/Transaction))
 
-(flow "batch-settlement"
-  (partial init! sys/test-system)
+(def batch-settlement-message
+  #:batch-settlement {:id batch-id})
+
+(flow "process batch"
+  (partial th/init! sys/test-system)
       
   (partial aux/mock-employees!
            employee<pay-day>
@@ -47,20 +51,47 @@
            employee<pay-day>                      [settled-transaction unsettled-transaction]
            employee<not-pay-day>                  [settled-transaction unsettled-transaction]
            employee<pay-day-but-negative-balance> [negative-transaction])
-  
-  (partial message-arrived! :batch-settle {:batch-settlement/as-of last-day-of-month-9am
-                                           :batch-settlement/id    batch-id})
+
+  (partial aux/mock-batch! batch-id last-day-of-month-9am)
+
+  (partial th/message-arrived! :process-batch batch-settlement-message)
       
   (fact "sends a :settle-transactions message for each settlement"
-    (produced-messages :settle-transactions)
+    (th/produced-messages :settle-transactions)
     => [#:settlement {:employee-id  (:employee/id employee<pay-day>)
                       :transactions [(:transaction/control-key unsettled-transaction)]}])
   
   (fact "sends a :execute-payment message for each settlement"
-    (produced-messages :execute-payment)
-    => [#:payment {:recipient (:employee/id employee<pay-day>)
-                   :amount    2000M
-                   :method    :payment-method/deposit}])
+    (th/produced-messages :execute-payment)
+    => (just [(match #:payment {:recipient   (:employee/id employee<pay-day>)
+                                :amount      2000M
+                                :control-key anything
+                                :method      :payment-method/deposit})]))
   
   (fact "sends a :create-batch-report message"
-    (produced-messages :create-batch-report) => [{:batch-settlement/id batch-id}]))
+    (th/produced-messages :create-batch-report) => [{:batch-settlement/id batch-id}])
+
+  (future-fact "sends a :send-payslip message for each settlement"))
+
+(flow "idempotency check - same message arrives twice"
+  (partial th/init! sys/test-system)
+
+  (partial aux/mock-employees! employee<pay-day>)
+
+  (partial aux/mock-transactions! employee<pay-day> [unsettled-transaction])
+
+  (partial aux/mock-batch! batch-id last-day-of-month-9am)
+
+  (partial th/message-arrived! :process-batch batch-settlement-message)
+
+  (partial th/clear-produced-messages!)
+
+  ; Same message arrives again
+  (partial th/message-arrived! :process-batch batch-settlement-message)
+
+  (facts "in the second time"
+    (fact "no :settle-transactions message is produced"
+      (th/produced-messages :settle-transactions) => [])
+
+    (fact "no :execute-payment message is produced"
+      (th/produced-messages :execute-payment) => [])))

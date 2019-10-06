@@ -2,11 +2,11 @@
   (:require [settlement.schemata.settlement :as s-settlement]
             [settlement.controllers.settlement :as c-settlement]))
 
-(defn batch-settle!
-  [{:keys [batch-settlement/as-of batch-settlement/id]} components]
-  (c-settlement/batch-settle! as-of id components))
+(defn process-batch!
+  [{:keys [batch-settlement/id]} components]
+  (c-settlement/process-batch! id components))
 
 (def topics
-  {:batch-settle
-   {:handler batch-settle!
-    :schema  s-settlement/BatchSettleMessage}})
+  {:process-batch
+   {:handler process-batch!
+    :schema  s-settlement/ProcessBatchMessage}})

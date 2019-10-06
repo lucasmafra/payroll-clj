@@ -1,6 +1,7 @@
 (ns settlement.adapters.settlement
   (:require [schema.core :as s]
-            [settlement.schemata.settlement :as s-settlement]))
+            [settlement.schemata.settlement :as s-settlement]
+            [common-clj.generators :as gen]))
 
 (s/defn ->settle-transactions-message :- s-settlement/SettleTransactionsMessage
   [{:keys [employee/id]} :- s-settlement/Employee
@@ -16,4 +17,5 @@
   #:payment
   {:recipient id
    :amount    balance
-   :method    payment-method})
+   :method    payment-method
+   :control-key (gen/generate s/Uuid)})

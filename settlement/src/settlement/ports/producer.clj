@@ -4,4 +4,5 @@
 (def topics
   {:execute-payment     s-settlement/ExecutePaymentMessage
    :settle-transactions s-settlement/SettleTransactionsMessage
-   :create-batch-report s-settlement/CreateBatchReportMessage})
+   :create-batch-report s-settlement/CreateBatchReportMessage
+   :process-batch       s-settlement/ProcessBatchMessage})

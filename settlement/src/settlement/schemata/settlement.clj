@@ -28,16 +28,16 @@
 
 (def PaymentMethod (s/enum :payment-method/deposit))
 
-(def BatchSettleMessage
+(def ProcessBatchMessage
   #:batch-settlement
-  {:as-of LocalDateTime
-   :id    s/Uuid})
+  {:id s/Uuid})
 
 (def ExecutePaymentMessage
   #:payment
-  {:recipient s/Uuid
-   :amount    BigDecimal
-   :method    PaymentMethod})
+  {:recipient   s/Uuid
+   :amount      BigDecimal
+   :control-key s/Uuid
+   :method      PaymentMethod})
 
 (def SettleTransactionsMessage
   #:settlement
@@ -47,3 +47,19 @@
 (def CreateBatchReportMessage
   #:batch-settlement
   {:id s/Uuid})
+
+(def BatchSettlement
+  #:batch-settlement
+  {:id                                             s/Uuid
+   :as-of                                          LocalDateTime
+   (s/optional-key :batch-settlement/processed-at) LocalDateTime})
+
+(def BatchSettleRequest
+  (s/maybe
+   #:batch-settlement
+   {(s/optional-key :batch-settlement/as-of) LocalDateTime}))
+
+(def BatchSettleResponse
+  #:batch-settlement
+  {:id    s/Uuid
+   :as-of LocalDateTime})

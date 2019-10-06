@@ -10,11 +10,13 @@
             [common-clj.components.http-client.in-memory-http-client :as im-hc]
             [common-clj.components.consumer.in-memory-consumer :as im-consumer]
             [common-clj.components.producer.in-memory-producer :as im-producer]
-            [common-clj.components.http-server.http-server :as hs]))
+            [common-clj.components.http-server.http-server :as hs]
+            [common-clj.components.docstore-client.dynamo-docstore-client :as dynamo-dc]
+            [common-clj.components.docstore-client.in-memory-docstore-client :as im-dc]))
 
 (defn merge-vec [& args] (vec (apply concat args)))
 
-(def app-components [:producer :http-client])
+(def app-components [:producer :http-client :db])
 
 (def system
   (component/system-map
@@ -22,7 +24,7 @@
    
    :http-server (component/using
                  (hs/new-http-server p-hs/routes)
-                 [:config])
+                 (merge-vec app-components [:config]))
    
    :http-client (im-hc/new-http-client p-hc/endpoints)
 
@@ -32,6 +34,10 @@
 
    :producer    (component/using
                  (kafka-producer/new-producer p-producer/topics)
+                 [:config])
+
+   :db          (component/using
+                 (dynamo-dc/new-docstore-client)
                  [:config])))
 
 (def test-system
@@ -48,6 +54,10 @@
 
     :producer    (component/using
                   (im-producer/new-producer p-producer/topics)
+                  [:config])
+
+    :db          (component/using
+                  (im-dc/new-docstore-client)
                   [:config]))))
 
 (def -main (partial component/start system))

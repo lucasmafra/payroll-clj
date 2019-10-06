@@ -2,6 +2,7 @@
   (:require [common-clj.generators :as gen]
             [midje.sweet :refer :all]
             [schema.core :as s]
+            [matcher-combinators.midje :refer [match]]
             [settlement.adapters.settlement :as a-settlement]
             [settlement.schemata.settlement :as s-settlement]))
 
@@ -23,6 +24,7 @@
 
   (fact "->execute-payment-message"
     (a-settlement/->execute-payment-message employee settlement :payment-method/deposit)
-    => #:payment {:recipient employee-id
-                  :amount    balance
-                  :method    :payment-method/deposit}))
+    => (match #:payment {:recipient   employee-id
+                         :amount      balance
+                         :control-key anything
+                         :method      :payment-method/deposit})))

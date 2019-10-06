@@ -4,8 +4,7 @@
             [common-clj.components.config.edn-config :as edn-config]
             [common-clj.components.consumer.in-memory-consumer :as im-consumer]
             [common-clj.components.consumer.kafka-consumer :as kafka-consumer]
-            [common-clj.components.docstore-client.dynamo-docstore-client
-             :as dynamo-dc]
+            [common-clj.components.docstore-client.dynamo-docstore-client :as dynamo-dc]
             [common-clj.components.docstore-client.in-memory-docstore-client :as im-dc]
             [common-clj.components.http-server.http-server :as hs]
             [ledger.ports.consumer :as p-consumer]

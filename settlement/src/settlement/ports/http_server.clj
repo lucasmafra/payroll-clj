@@ -1,14 +1,16 @@
 (ns settlement.ports.http-server
   (:require [schema.core :as s]
-            [settlement.controllers.settlement :as c.settlement]))
+            [settlement.controllers.settlement :as c.settlement]
+            [settlement.schemata.settlement :as s-settlement]))
 
-(defn batch-settlement [request components]
-  {:status 200
-   :body   (c.settlement/batch-settle! components)})
+(defn batch-settle [{{:keys [batch-settlement/as-of]} :body} components]
+  {:status 201
+   :body   (c.settlement/create-batch-settlement! as-of components)})
 
 (def routes
-  {:batch-settlement
+  {:batch-settle
    {:path               "/settlement/batch"
     :method             :post
-    :handler            batch-settlement
-    :response-schema    s/Any}})
+    :handler            batch-settle
+    :request-schema     s-settlement/BatchSettleRequest
+    :response-schema    s-settlement/BatchSettleResponse}})

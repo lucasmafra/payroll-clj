@@ -40,10 +40,9 @@
        :contract-type/hourly-rate (time/friday? as-of)
        
        :contract-type/sales-commission (and (time/friday? as-of)
-                                            (or first-settlement?
-                                                (at-least-two-weeks-ago?
-                                                 last-settlement-date
-                                                 as-of)))}))))
+                                            (or first-settlement? (at-least-two-weeks-ago?
+                                                                   last-settlement-date
+                                                                   as-of)))}))))
 
 (s/defn positive-settlement? :- s/Bool
   [{:keys [settlement/balance]} :- s-settlement/Settlement]
