@@ -1,6 +1,13 @@
 (ns settlement.ports.http-client
   (:require [schema.core :as s]
-            [settlement.schemata.settlement :as s-settlement]))
+            [settlement.schemata.settlement :as s-settlement]
+            [common-clj.components.http-client.protocol :as hc-pro]))
+
+(defn fetch-employees [{:keys [http-client]}]
+  (:employees (hc-pro/request http-client :get-all-employees)))
+
+(defn fetch-all-transactions [{:keys [employee/id]} {:keys [http-client]}]
+  (:transactions (hc-pro/request http-client :get-transactions {:employee-id id})))
 
 (def endpoints
   {:get-all-employees

@@ -9,17 +9,16 @@
 
 (def Transaction
   #:transaction
-  {:control-key                             s/Uuid
-   :category                                s/Keyword
-   :amount                                  BigDecimal
-   :reference-date                          LocalDate
-   (s/optional-key :transaction/settled-at) LocalDateTime})
+  {:control-key    s/Uuid
+   :category       s/Keyword
+   :amount         BigDecimal
+   :reference-date LocalDate})
 
 (def Settlement
   #:settlement
-  {:balance        BigDecimal
-   :transactions   [Transaction]
-   :reference-date LocalDateTime})
+  {:balance      BigDecimal
+   :transactions #{Transaction}
+   :as-of        LocalDate})
 
 (def Employee
   #:employee

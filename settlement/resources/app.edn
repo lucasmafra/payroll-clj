@@ -3,6 +3,4 @@
  :kafka-server    "localhost:9092"
  :dynamo-endpoint "http://localhost:8000"
  :aws-access-key  "aws-access-key"
- :aws-secret-key  "aws-secret-key"
- :dynamo-tables   {:settlement/batches
-                   {:primary-key [:batch-settlement/id :s]}}}
+ :aws-secret-key  "aws-secret-key"}

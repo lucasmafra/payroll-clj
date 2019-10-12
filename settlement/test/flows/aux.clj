@@ -1,17 +1,14 @@
 (ns flows.aux
-  (:require [settlement.ports.db :as db]
-            [common-clj.components.http-client.in-memory-http-client :as im-hc]
+  (:require [common-clj.components.http-client.in-memory-http-client :as im-hc]
             [common-clj.test-helpers :as th]
-            [settlement.controllers.settlement :as c-settlement]))
+            [common-clj.uuid :as uuid]))
 
-(defn mock-employees! [& args]
-  (let [world (last args)
-        http-client (-> world :system :http-client)
-        employees (butlast args)]
+(defn mock-fetch-employees-response! [employees world]
+  (let [http-client (-> world :system :http-client)]
     (im-hc/mock-response! http-client :get-all-employees {:body {:employees employees}})
     world))
 
-(defn mock-transactions!
+(defn mock-fetch-transactions-response!
   [& args]
   (let [world (last args)
         http-client (-> world :system :http-client)
@@ -21,6 +18,9 @@
        http-client :get-transactions {:employee-id id} {:body {:transactions transactions}}))
     world))
 
-(defn mock-batch! [batch-id as-of world]
-  (with-redefs [c-settlement/new-batch-id (constantly batch-id)]
-    (th/request-arrived! :batch-settle {:body {:batch-settlement/as-of as-of}} world)))
+(defn mock-batch-request! [batch-id world]
+  (with-redefs [uuid/random (constantly batch-id)]
+    (th/request-arrived! :batch-settle world)))
+
+(defn process-batch-message-arrived! [batch-id world]
+  (th/message-arrived! :process-batch {:batch-settlement/id batch-id} world))

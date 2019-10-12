@@ -1,97 +1,102 @@
 (ns flows.process-batch
-  (:require [common-clj.generators :as gen]
-            [flows.aux :as aux]
+  (:require [flows.aux :as aux]
             [midje.sweet :refer :all]
             [selvage.midje.flow :refer [flow *world*]]
             [settlement.system :as sys]
             [matcher-combinators.midje :refer [match]]
-            [settlement.schemata.settlement :as s-settlement]
             [schema.core :as s]
-            [common-clj.test-helpers :as th])
-  (:import java.time.LocalDateTime))
+            [fixtures.settlement :as fs]
+            [common-clj.test-helpers :as th :refer [as-of]]))
 
-(def last-day-of-month-8am #date-time "2019-09-30T08:00:00")
-(def last-day-of-month-9am #date-time "2019-09-30T09:00:00")
+(as-of fs/last-day-of-month-9am
+  (flow "process batch"
+    (partial th/init! sys/test-system)
+    
+    (partial aux/mock-fetch-employees-response!
+             [fs/employee<pay-day>
+              fs/employee<not-pay-day>
+              fs/employee<pay-day-but-negative-balance>])
 
-(def batch-id (gen/generate s/Uuid))
+    (partial aux/mock-fetch-transactions-response!
+             fs/employee<pay-day>                      [fs/transaction-a fs/transaction-b]
+             fs/employee<not-pay-day>                  [fs/transaction-a fs/transaction-b]
+             fs/employee<pay-day-but-negative-balance> [fs/negative-transaction])
+    
+    (partial aux/mock-batch-request! fs/batch-id)
+    
+    (partial aux/process-batch-message-arrived! fs/batch-id)
+    
+    (fact "a :execute-payment message is sent for each settlement made"
+      (th/produced-messages :execute-payment)
+      => (just [(match #:payment {:recipient   fs/employee-id<pay-day>
+                                  :amount      (+ fs/amount<transaction-a> fs/amount<transaction-b>)
+                                  :control-key anything
+                                  :method      :payment-method/deposit})]))
 
-; Salaried employees get paid on last day of month
-(def employee<pay-day> (gen/complete {:employee/contract-type :contract-type/salary}
-                                     s-settlement/Employee))
-
-; Hourly rate employees don't get paid on this day (it's not friday)
-(def employee<not-pay-day> (gen/complete {:employee/contract-type :contract-type/hourly-rate}
-                                         s-settlement/Employee))
-
-; Will mock a negative transaction for this employee
-(def employee<pay-day-but-negative-balance> (gen/generate s-settlement/Employee))
-
-(def unsettled-transaction
-  (dissoc
-   (gen/complete {:transaction/amount 2000M} s-settlement/Transaction)
-   :transaction/settled-at))
-
-(def settled-transaction
-  (gen/complete {:transaction/settled-at (gen/generate LocalDateTime)} s-settlement/Transaction))
-
-(def negative-transaction (gen/complete {:transaction/amount -100M} s-settlement/Transaction))
-
-(def batch-settlement-message
-  #:batch-settlement {:id batch-id})
-
-(flow "process batch"
-  (partial th/init! sys/test-system)
-      
-  (partial aux/mock-employees!
-           employee<pay-day>
-           employee<not-pay-day>
-           employee<pay-day-but-negative-balance>)     
+    (future-fact "a :send-payslip message is sent for each settlement made")
+    
+    (fact "a :create-batch-report message is sent"
+      (th/produced-messages :create-batch-report) => [{:batch-settlement/id fs/batch-id}])))
   
-  (partial aux/mock-transactions!
-           employee<pay-day>                      [settled-transaction unsettled-transaction]
-           employee<not-pay-day>                  [settled-transaction unsettled-transaction]
-           employee<pay-day-but-negative-balance> [negative-transaction])
+(as-of fs/last-day-of-month-9am
+  (flow "idempotency check - same message arrives twice"
+    (partial th/init! sys/test-system)
+             
+    (partial aux/mock-fetch-employees-response! [fs/employee<pay-day>])
+             
+    (partial aux/mock-fetch-transactions-response!
+             fs/employee<pay-day> [fs/transaction-a])
+    
+    (partial aux/mock-batch-request! fs/batch-id)
+    
+    ; First time
+    (partial aux/process-batch-message-arrived! fs/batch-id)
+             
+    (partial th/clear-produced-messages!)
+          
+    ; Second time   
+    (partial aux/process-batch-message-arrived! fs/batch-id)
 
-  (partial aux/mock-batch! batch-id last-day-of-month-9am)
+    (facts "in the second time"
+      (fact "no :execute-payment message is produced"
+        (th/produced-messages :execute-payment) => [])
+      (fact "no :create-batch-report message is produced"
+        (th/produced-messages :create-batch-report) => []))))
 
-  (partial th/message-arrived! :process-batch batch-settlement-message)
-      
-  (fact "sends a :settle-transactions message for each settlement"
-    (th/produced-messages :settle-transactions)
-    => [#:settlement {:employee-id  (:employee/id employee<pay-day>)
-                      :transactions [(:transaction/control-key unsettled-transaction)]}])
-  
-  (fact "sends a :execute-payment message for each settlement"
-    (th/produced-messages :execute-payment)
-    => (just [(match #:payment {:recipient   (:employee/id employee<pay-day>)
-                                :amount      2000M
-                                :control-key anything
-                                :method      :payment-method/deposit})]))
-  
-  (fact "sends a :create-batch-report message"
-    (th/produced-messages :create-batch-report) => [{:batch-settlement/id batch-id}])
+(as-of fs/last-day-of-month-9am
+  (flow "two different messages arrive"
+    (partial th/init! sys/test-system)
+          
+    (partial aux/mock-fetch-employees-response! [fs/employee<pay-day>])
+          
+    ; In the first time the employee has only transaction-a 
+    (partial aux/mock-fetch-transactions-response!
+             fs/employee<pay-day> [fs/transaction-a])
+             
+    (partial aux/mock-batch-request! fs/batch-id)
 
-  (future-fact "sends a :send-payslip message for each settlement"))
-
-(flow "idempotency check - same message arrives twice"
-  (partial th/init! sys/test-system)
-
-  (partial aux/mock-employees! employee<pay-day>)
-
-  (partial aux/mock-transactions! employee<pay-day> [unsettled-transaction])
-
-  (partial aux/mock-batch! batch-id last-day-of-month-9am)
-
-  (partial th/message-arrived! :process-batch batch-settlement-message)
-
-  (partial th/clear-produced-messages!)
-
-  ; Same message arrives again
-  (partial th/message-arrived! :process-batch batch-settlement-message)
-
-  (facts "in the second time"
-    (fact "no :settle-transactions message is produced"
-      (th/produced-messages :settle-transactions) => [])
-
-    (fact "no :execute-payment message is produced"
-      (th/produced-messages :execute-payment) => [])))
+    ; First message arrives
+    (partial aux/process-batch-message-arrived! fs/batch-id)
+             
+    (partial th/clear-produced-messages!)
+    
+    ; In the second time the employee has transactions a and b
+    (partial aux/mock-fetch-transactions-response!
+             fs/employee<pay-day> [fs/transaction-b fs/transaction-a])
+         
+    (partial aux/mock-batch-request! fs/another-batch-id)
+             
+    ; Second message arrives
+    (partial aux/process-batch-message-arrived! fs/another-batch-id)
+             
+    (facts "in the second message only not settled transactions are considered"
+      (fact "a :execute-payment message is produced"
+        (th/produced-messages :execute-payment)
+        => (just [(match #:payment {:recipient   fs/employee-id<pay-day>
+                                    :amount      fs/amount<transaction-b> 
+                                    :control-key anything
+                                    :method      :payment-method/deposit})]))
+               
+      (fact "a :create-batch-report message is sent"
+        (th/produced-messages :create-batch-report)
+        => [{:batch-settlement/id fs/another-batch-id}]))))
